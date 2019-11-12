@@ -205,7 +205,7 @@ the list else, it will override any other routes as it is a wilcard route.
 - Import `NgForms` from `@angular/forms` and add below code in template.
 - Add the directive `(ngSubmit)="onSubmit(formReference)"` to the `form` element with `onSubmit()` being defined in the component class. Also add local reference `#formReference="ngForm"` to the form element to make it accessible in javascript.
 - The first parameter to `onSubmit(form: NgForm)` is of the type `NgForm` now which is default created by Angular to handle forms.
-- To access the values of the fields with `ngModel`, access `form.value` object
+- To access the values of the fields with `ngModel`, access `formReference.value` object
 
 ### Form validations
 - Add `required` to element and to check if the field is empty.
@@ -280,3 +280,70 @@ export class ShortenPipe implements PipeTransform{
 - Use `this.http.post()` or `this.http.get()` to make the request.
 - First param is URL, second param is the data and returns an observable which needs to be subscribed to.
     - Example: `this.http.post(url, data).subscribe(responseData => {})`
+- Use `.pipe(responseData => {}) after .post()` to convert response data 
+- To add a loading indicator, use a variable `loading` which is set to false initially and set it to `true` after the request until the `.subscribe` is executed.
+- Implement services to use Http and avoid running HTTP request in components. For async operations, return the `this.http.get().pipe()` method which would let the Component call `.subscribe()` and perform operations on final data as required.
+- Use `this.http.delete(url)` to delete content on the backend.
+- The second argument of `.subscribe()` can be used to handle `error`. Add a field to the component which is set to false and display a template only when the error is set to true along with message which is set to another field.
+
+### Advanced HTTP
+- Import `HttpHeaders`, `HttpParams` from `@angular/common/http`.
+- Set second parameter of `.get()` to `{headers : new HttpHeaders({ 'Custom-Header': 'Hello' })}` or third parameter in `.post()`
+- Also set `params: new HttpParams().set('field', 'value')` after setting `headers` to add query params in the string.
+- For multiple parameters, call `.append('field', 'value')` in a chain like
+    - Example: `let queryParams = new HttpParams().append('field1', 'v1').append('f2', 'v2')` and pass `queryParams` to `params:` in the object.
+- For fine grain control such as running methods after each event of http, set `{ observe: events }` and call the `.pipe(events => {})` where events is the event passed which can be `Sent`, `ResponseHeader`, `Response`, `DownloadProgress`, `UploadProgress` and so on. Use this to define what functionality is to be executed during which event.
+- Angular by default converts the response object to `json` type and can be explicitly set to `text` or `blob` for file upload or string response using `responseType: 'blob'` property.
+
+### Http Interceptor
+- Interceptors are intermediate functions that can be used for adding data which is custom but always required in every request like authentication.
+- Import `HttpInterceptor`, `HttpRequest` and `HttpHandler` from `@angular/common/http` and define a class which is to be exported and `implements HttpInterceptor`. 
+- This class must implement the function `intercept(req: HttpRequest<any>, next:HttpHandler)` which should return `next.handle(req)`. Make any required changes on `req` object.
+- Add this to the `providers` in `@NgModule` by adding an object like `providers: [{ provide: HTTP_INTERCEPTOR, useClass: <exportedClass>, multi: true }]`
+    - `multi` means multiple services can be instantiated
+- `req` object here is immutable and create a new copy and make changes to the new copy and pass it to the `handle`
+    - Example: `const modReq = req.clone({ headers: req.headers.append('Auth', 'xyz') })`
+- Extending the `.handle()` with a `.pipe(tap(event => {}))` allows for intercepting response also. Compare `event.type === HttpEventType.Response` and access `event.body` if true. import `tap` from `rxjs/operators`
+- With multiple interceptors, order the interceptors in `providers` as per which needs to be run first.
+
+### Authentication
+- Create an auth component class along with a template with selector set to `app-auth` and add it to `@NgModule -> declarations` 
+- Create a single form which can switch state between `login` and `register`
+- Create a new service `AuthService` which has below methods and add it to `providers` in `@NgModule`
+    - `constructor`: Inject HttpClient to this method.
+    - `signUp`: Use the Http object to make a request to the backend and fetch the token.
+- Inject the `AuthService` in the component `constructor` and call the methods where required.
+- Create a new `User` class that is to be exported with 2 methods and 4 properties
+    - `email`, `id`, `_token`, `_tokenExpirationDate` as properties
+    - `get token()` returns token by default except if `_tokenExpirationDate` is in the past, returns null
+- Implement an interceptor called `AuthInterceptorService` which `implements HttpInterceptor` for adding token to every request.
+- Handle the case for login and signup where there is no token by simply sending the request forward as is instead of adding any parameter. Add this check by checking if there is a user object created or if `isAuthenticated` is true.
+- For logout, add a method in the service which will set the `user` object to null. 
+- Use local storage to store the token by calling `localStorage.setItem('userData', JSON.stringify(user))` and define a function called `autoLogin()` which access the storage, checking for `'userData'` and if not available return null else load `JSON.parse(localStorage.getItem('userData'))` and return a new user created.
+- Implement autoLogout using a `setTimeout` with duration set to `expirationTime`. Also, capture the handle and call `clearTimeout(handle)` in logout to avoid calling logout twice if user manually logs out.
+- To avoid access to pages from URL routing, use `CanActivate` from `@angular/router`. 
+    - Implement a class which `implements CanActivate` and should define a function `canActivate` that takes 2 params and returns either 
+        - `route: ActivatedRouteSnapshot`
+        - `router: RouterStateSnapshot`
+
+### Modules
+- Seperate Components, Directives and Services into seperate modules known as feature module.
+- Inorder to create a module, add `@NgModule` decorator to the exported class and pass `imports` and `exports` for the components that you would want to import and export. This makes the `AppModule` much smaller in definition. Add `CommonModule` for access to `ngForOf` or other angular directives. DO NOT load `BrowserModule` a second time. 
+- Transfer all the routing to another module and use `redirectTo` to delegate.
+- Multiple declarations are not allowed!!'
+
+### Deployment of Angular App
+- Add changes necessary for production environment in `environment.prod.ts` and development environment in `environment.ts`. This already comes with angular-cli under `src/environment`.
+- import value from files into `{ environment }`
+- Run `ng build --prod` to generate static files which 
+- Point reverse proxy server to serve `index.html` under `dist/<folder_name_containing_index.html>`
+
+### Testing
+- Run `ng test` to run tests.
+
+### Angular Universal
+
+### NgRx
+
+### Angular Animations
+
