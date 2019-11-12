@@ -9,7 +9,7 @@
 - Run `ng g c <component_name>` to create a new component under app directory.
 - Modify `html` file to define the template for the component and `css` for local stylesheets.
 - Every component needs to be defined with the below parameters as an object passed to the `@Component` decorator which decorates the export class definition.
-    - `selectors`: `(String)` defines the name of the selector that can be used by other elements to reference in templates
+    - `selector`: `(String)` defines the name of the selector that can be used by other elements to reference in templates
     - `templateUrl`: `(String)` defines the relative url of the template html file for the component
     - `styleUrls`: `(Array(String))` defines an array of stylesheets that needs to be loaded for the component template html file.
 - The exported class component should be imported and added to `@NgModule > declarations[]` array so that it is accessible across any components template file.
@@ -200,53 +200,17 @@ the list else, it will override any other routes as it is a wilcard route.
     - `customObservable.unsubscribe()` can be called to unsubscribe to event.
 
 ### Forms
-- Add `FormsModule` under `imports` in `@NgModule`.
-- To add an input to track add `ngModel` to any form element in the template. Also specify `name="<field_name>"` to track.
-- Import `NgForms` from `@angular/forms` and add below code in template.
-- Add the directive `(ngSubmit)="onSubmit(formReference)"` to the `form` element with `onSubmit()` being defined in the component class. Also add local reference `#formReference="ngForm"` to the form element to make it accessible in javascript.
-- The first parameter to `onSubmit(form: NgForm)` is of the type `NgForm` now which is default created by Angular to handle forms.
-- To access the values of the fields with `ngModel`, access `formReference.value` object
-
-### Form validations
-- Add `required` to element and to check if the field is empty.
-- Add `email` directive to element which is the email field.
+- Refer formHandling.md for more details.
 - Validators shipped with Angular can be referred to at [Validators](https://angular.io/api/forms/Validators)
-- Angular adds classes dynamically based on these validators to each element which can be defined in your CSS file to get custom styles.
-    - Example: `input.ng-invalid.ng-touched` can be set set to display red background which is added to invalid fields which are invalid
-- If any validations fail `form.valid` is set to false.
-- For custom messages to any input field with invalid values, add a span beside the input with the required text such as `Please enter valid data` and use an `*ngIf` to display if the input field is valid. 
-    - Example: `<span *ngIf="!email.valid && email.touched">Please enter a valid email address!</span>`. Email touched is to be added because all required elements are set to invalid on page load.
-
-### Other form features
-- To determine if the input field is valid add a local reference and pass the value as `ngModel`
-    - Example: `<input type="text" #email="ngModel">`
-- Adding a [] around `ngModel` allows for one way property binding and can be set to value defined in javascript.
 - Adding a `[(ngModel)]="<field_name>"` allows for a two way binding 
-- Just adding `ngModel` to an input makes it accessibly in `ngForm` object for fetching value during `submit()`
-- To set an input field, call `patchValue` to set few fields in a form.
-    - Example: `this.signupForm.patchValue({ username: 'value' })` will set the value for the input having `name="username"`
-- Reset forms using `this.signupForm.reset()` which not only makes every empty but also the classes to fresh reload. 
-- Set values using `setValue`
-    - Example: `this.signupForm.setValue({ //define value for all fields as any fields left out will be set to empty })`
-
-### Reactive form
-- Import `FormGroup` from `@angular/forms` and `ReactiveFormsModule` in the `@NgModule` instead of `FormsModule`
-- create a `FormGroup` type object for the form and initialize in the `ngOnInit()`
-    - Example: `this.signupForm = new FormGroup({})` 
-- Import `FormControl` from `@angular/forms` and add FormControl to the object passed to `FormGroup`
-    - Example: `this.signupForm = new FormGroup( { 'username': new FormControl(null), 'gender': new FormControl('male') } )`, passing param sets it to default.
-- In the template, use property binding to bind the FormGroup with the form using `[formGroup]="signupForm"`
-- For each input, use property binding to bind the form control using `[formControlName]="'username'"`
-- Add `(ngSubmit)="onSubmit()"` to execute onSubmit when form submit is clicked.
-- To add dynamic inputs or define an array of inputs, use `FormArray`. Create a property with `'field': new FormArray([])`. Use an event listener on a button or wherever required and push elements to this array by calling `(<FormArray>this.signupForm.get('field')).push(new FormControl(null, Validators.required))`. This will add an empty form control to the form array. 
-- On the template, link the parent div that lists the elements along with name of the formArray by using the directive `[formArrayName]="'field'"`. Use a `*ngFor="let fields of (<FormArray>signupForm.get('field')).controls; let i = index"`
-
-### Reactive form validation
-- To validate an input, pass second parameters of FormControl as Validators
-    - Example: `new FormControl(null, Validators.required)` or `new FormControl(null, [Validators.required, Validators.email])`
-- Use `*ngIf="!signupForm.get('username').valid && signupForm.get('username').touched"` for displaying error messages which are hidden
-- Use multiple spans with different text for different error codes that can be activated based on type of error which can be accessed from `signupForm.get('username').errors['required']`
-- Subscribe to value changes to forms or status changes to form using `this.signupForm.valueChanges.subscribe( value => {} )` or `this.signupForm.statusChanges.subscribe( status => {} )`
+- For dynamic inputs in form 
+    - Create property in formGroup with type formArray. `'field': new FormArray([])`
+    - Push elements to this array by calling `(<FormArray>this.signupForm.get('field')).push(new FormControl(null, Validators.required))`.
+    - Link the template for a parent div that shows this element by adding `[formArrayName]="'field'"`.
+    - Use a `*ngFor="let fields of (<FormArray>signupForm.get('field')).controls; let i = index"` to display each element
+- Form errors can be obtained from `formLogin.get('email').errors['required']`
+- Listen to value changes  using `this.signupForm.valueChanges.subscribe( value => {} )`
+- Listen to status changes using `this.signupForm.statusChanges.subscribe( status => {} )`
 
 ### Pipes
 - Used to transform data at the last step on template layer. Used in template with a preceding `|`. 
